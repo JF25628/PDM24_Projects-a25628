@@ -50,6 +50,7 @@ fun NavegacaoApp() {
         composable("destino") {
             EcraDestino(navController, carros)
         }
+
         composable("adicionar_carro") {
             AdicionarCarroScreen(navController, carros)
         }

@@ -1,15 +1,10 @@
 package com.example.noticiasapi.app.data.remote.model
 
-data class NewsResponse(
-    val status: String,
-    val news: List<NewsItem>
-)
+import com.google.gson.annotations.SerializedName
 
-data class NewsItem(
-    val id: String,
-    val title: String,
-    val description: String,
-    val url: String,
-    val image: String?,
-    val published: String
+data class NewsResponse (
+    @SerializedName("country") val country: String,
+    @SerializedName("language") val language: String,
+    @SerializedName("top_news") val topNews: List<TopNew>
+
 )
