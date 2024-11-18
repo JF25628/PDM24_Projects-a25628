@@ -2,4 +2,8 @@
 <resources>
 
     <style name="Theme.Primeiraaplicacao" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.NoticiaAPI" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.NoticiasAPI" parent="android:Theme.Material.Light.NoActionBar" />
 </resources>
