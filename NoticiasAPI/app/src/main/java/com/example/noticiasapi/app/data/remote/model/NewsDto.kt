@@ -1,8 +1,6 @@
 package com.example.noticiasapi.app.data.remote.model
 
 import com.example.noticiasapi.app.domain.model.News
-import com.example.noticiasapi.app.domain.model.NewsItem
-import com.example.noticiasapi.app.domain.model.NewsResponse
 import com.google.gson.annotations.SerializedName
 
 data class NewsDto(
