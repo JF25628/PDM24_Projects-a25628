@@ -25,42 +25,6 @@ import androidx.compose.ui.unit.dp
 import com.example.noticiasapi.app.domain.model.News
 import com.example.noticiasapi.app.presentation.news_list.viewModel.NewsListViewModel
 
-//@Composable
-//fun NewsListScreen(viewModel: NewsListViewModel, onItemClick: (Int) -> Unit){
-//    val newsList = viewModel.newsList.collectAsState().value
-//
-//    LaunchedEffect(Unit) {
-//        viewModel.fetchNews()
-//    }
-//
-//    if (newsList.isEmpty()) {
-//        Text("a carregar...")
-//    } else {
-//        LazyColumn {
-//            items(newsList) {
-//                news -> NewsStoryItem(news = news, onItemClick = {onItemClick(news.id)})
-//            }
-//        }
-//    }
-//}
-//
-//
-//
-//
-//@Composable
-//fun NewsStoryItem(news: News, onItemClick: () -> Unit){
-//    Column (
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .clickable(onClick = onItemClick)
-//            .padding(8.dp)
-//    ) {
-//        Text(text = news.title)
-//        if(news.summary.isNotBlank()){
-//            Text(text = news.summary, modifier = Modifier.padding(top = 4.dp))
-//        }
-//    }
-//}
 
 
 @Composable

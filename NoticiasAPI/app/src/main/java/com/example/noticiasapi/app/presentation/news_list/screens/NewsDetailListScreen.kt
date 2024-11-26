@@ -26,39 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.noticiasapi.app.presentation.news_list.viewModel.NewsDetailListViewModel
 
-//@Composable
-//fun NewsDetailScreen(
-//    viewModel: NewsDetailListViewModel,
-//    onBack: () -> Unit
-//) {
-//
-//    val storyDetail = viewModel.newsDetail.collectAsState()
-//
-//    storyDetail.value?.let { detail ->
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(16.dp)
-//        ) {
-//            Text(text = detail.tittle, modifier = Modifier.padding(bottom = 8.dp))
-//            Text(text = detail.text, modifier = Modifier.padding(bottom = 8.dp))
-//            Text(text = detail.summary, modifier = Modifier.padding(bottom = 16.dp))
-//            Button(onClick = onBack) {
-//                Text("Back")
-//            }
-//        }
-//    } ?: Box(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(16.dp),
-//        contentAlignment = Alignment.Center
-//    ) {
-//        Text("Loading...")
-//    }
-//}
-
-
-
 @Composable
 fun NewsDetailListScreen(
     viewModel: NewsDetailListViewModel,

@@ -3,9 +3,7 @@ package com.example.noticiasapi.app.data.repository
 import NewsRepository
 import android.util.Log
 import com.example.noticiasapi.app.data.remote.api.NewsAPI
-import com.example.noticiasapi.app.data.remote.api.RetrofitInstance
-import com.example.noticiasapi.app.data.remote.model.NewsDto
-//import com.example.noticiasapi.app.data.remote.model.NewsItem
+
 import com.example.noticiasapi.app.domain.model.News
 import com.example.noticiasapi.app.domain.model.NewsDetail
 
