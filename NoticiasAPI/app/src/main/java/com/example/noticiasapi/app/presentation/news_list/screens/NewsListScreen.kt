@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,11 +20,20 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.noticiasapi.app.domain.model.News
 import com.example.noticiasapi.app.presentation.news_list.viewModel.NewsListViewModel
+
+fun parseHtmlToText(html: String): AnnotatedString
+{
+    return buildAnnotatedString {
+        append(Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT).toString())
+    }
+}
 
 @Composable
 fun NewsListScreen(viewModel: NewsListViewModel, onNewsClick: (Int) -> Unit)
@@ -51,24 +61,6 @@ fun NewsListScreen(viewModel: NewsListViewModel, onNewsClick: (Int) -> Unit)
                 NewsBox (news = article, onClick = { onNewsClick(article.id) })
             }
         }
-    }
-}
-
-@Composable
-fun LoadingScreen2()
-{
-    Box(
-        modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(text = "Loading ...")
-    }
-}
-
-fun parseHtmlToText(html: String): AnnotatedString
-{
-    return buildAnnotatedString {
-        append(Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT).toString())
     }
 }
 
@@ -106,3 +98,21 @@ fun NewsBox(news: News, onClick: () -> Unit)
 }
 
 
+@Composable
+fun LoadingScreen2()
+{
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
+
+        Text(
+            text = "Loading ...",
+            style = MaterialTheme.typography.bodyLarge.copy(
+                color = Color.Gray,
+                fontWeight = FontWeight.Bold
+            )
+        )
+    }
+}
