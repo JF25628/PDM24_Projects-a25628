@@ -9,8 +9,11 @@ data class NewsDetailDto(
     @SerializedName("publish_date") val publishDate: String,
     @SerializedName("text") val text: String,
     @SerializedName("title") val title: String,
-){
-    fun toNewsDetail(): NewsDetail {
+)
+{
+    //Metodo implementado para converter um objeto newsdetail dto num newsdetail da camada de dominio
+    fun toNewsDetail(): NewsDetail
+    {
         return NewsDetail(id=id, author = author, publishDate = publishDate, text = text, title = title)
     }
 }

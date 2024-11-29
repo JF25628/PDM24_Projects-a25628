@@ -121,7 +121,7 @@ fun LoadingScreen1() {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "A carregar detalhes...",
+            text = "Loading ...",
             style = MaterialTheme.typography.bodyLarge.copy(
                 color = Color.Gray
             )

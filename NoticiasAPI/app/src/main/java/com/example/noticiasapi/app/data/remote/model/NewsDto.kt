@@ -8,8 +8,11 @@ data class NewsDto(
     @SerializedName("language") val language: String,
     @SerializedName("summary") val summary: String,
     @SerializedName("title") val title: String,
-){
-    fun toNews(): News {
+)
+{
+    //Metodo implementado para converter um objeto news dto num news da camada de dominio
+    fun toNews(): News
+    {
         return News(id = id, title = title, summary = summary, language = language)
     }
 }

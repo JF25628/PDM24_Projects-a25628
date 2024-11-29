@@ -8,21 +8,29 @@ import com.example.noticiasapi.app.data.remote.api.RetrofitInstance
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class NewsListViewModel : ViewModel() {
+class NewsListViewModel : ViewModel()
+{
     private val api = RetrofitInstance.api
     private val repository = NewsRepositoryImpl(api)
     private val getNewsUseCase = GetNewsUseCase(repository)
 
     val newsList = MutableStateFlow<List<News>>(emptyList())
 
-    fun fetchNews(){
+    fun fetchNews()
+    {
         viewModelScope.launch {
-            try {
+            try
+            {
                 val news = getNewsUseCase()
                 newsList.value = news
-            } catch (e: Exception){
+
+            }
+            catch (e: Exception)
+            {
                 newsList.value = emptyList()
+
             }
         }
     }
+
 }

@@ -6,18 +6,19 @@ import com.example.noticiasapi.app.data.repository.NewsRepositoryImpl
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.noticiasapi.app.data.remote.api.RetrofitInstance
-//import com.example.noticiasapi.app.data.remote.model.NewsItem
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 
-class NewsDetailListViewModel : ViewModel(){
+class NewsDetailListViewModel : ViewModel()
+{
     private val api = RetrofitInstance.api
     private val repository = NewsRepositoryImpl(api)
     private val getNewsDetailUseCase = GetNewsDetailsUseCase(repository)
 
     val newsDetail = MutableStateFlow<NewsDetail?>(null)
 
-    fun fetchNewsDetail(newsId: Int){
+    fun fetchNewsDetail(newsId: Int)
+    {
         viewModelScope.launch {
             try {
                 newsDetail.value = getNewsDetailUseCase(newsId)
@@ -26,7 +27,9 @@ class NewsDetailListViewModel : ViewModel(){
                 newsDetail.value = null
             }
         }
+
     }
+
 }
 
 

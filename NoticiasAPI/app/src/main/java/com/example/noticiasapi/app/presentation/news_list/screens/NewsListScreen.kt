@@ -25,19 +25,22 @@ import androidx.compose.ui.unit.dp
 import com.example.noticiasapi.app.domain.model.News
 import com.example.noticiasapi.app.presentation.news_list.viewModel.NewsListViewModel
 
-
-
 @Composable
-fun NewsListScreen(viewModel: NewsListViewModel, onNewsClick: (Int) -> Unit) {
+fun NewsListScreen(viewModel: NewsListViewModel, onNewsClick: (Int) -> Unit)
+{
     val news = viewModel.newsList.collectAsState().value
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit)
+    {
         viewModel.fetchNews()
     }
 
-    if (news.isEmpty()) {
+    if (news.isEmpty())
+    {
         LoadingScreen2()
-    } else {
+    }
+    else
+    {
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
@@ -52,24 +55,26 @@ fun NewsListScreen(viewModel: NewsListViewModel, onNewsClick: (Int) -> Unit) {
 }
 
 @Composable
-fun LoadingScreen2() {
+fun LoadingScreen2()
+{
     Box(
         modifier = Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center // Centraliza o texto
+        contentAlignment = Alignment.Center
     ) {
-        Text(text = "A carregar noticias...")
+        Text(text = "Loading ...")
     }
 }
 
-// Remove tags HTML presentes (summary)
-fun parseHtmlToText(html: String): AnnotatedString {
+fun parseHtmlToText(html: String): AnnotatedString
+{
     return buildAnnotatedString {
         append(Html.fromHtml(html, Html.FROM_HTML_MODE_COMPACT).toString())
     }
 }
 
 @Composable
-fun NewsBox(news: News, onClick: () -> Unit) {
+fun NewsBox(news: News, onClick: () -> Unit)
+{
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -87,7 +92,8 @@ fun NewsBox(news: News, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleMedium,
                 maxLines = 2
             )
-            if (!news.summary.isNullOrBlank()) {
+            if (!news.summary.isNullOrBlank())
+            {
                 Text(
                     text = parseHtmlToText(news.summary),
                     style = MaterialTheme.typography.bodyMedium,
