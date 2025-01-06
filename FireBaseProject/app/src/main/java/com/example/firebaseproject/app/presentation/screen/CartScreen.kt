@@ -19,7 +19,13 @@ import com.example.firebaseproject.app.presentation.viewModel.CartViewModel
 import com.example.firebaseproject.app.presentation.viewModel.CartViewModelFactory
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Send
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.ui.Alignment
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CartScreen(
     navController: NavController,
@@ -34,113 +40,163 @@ fun CartScreen(
     var email by remember { mutableStateOf("") }
     var showEmailInput by remember { mutableStateOf(false) }
     var emailError by remember { mutableStateOf("") }
+    val totalPrice = viewModel.calculateTotal()
 
-    // Add some logging to ensure cartProducts is populated
     LaunchedEffect(cartProducts) {
         Log.d("CartScreen", "Cart products: $cartProducts")
     }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        bottomBar = {
-            BottomAppBar(
-                content = {
-                    Button(
+        topBar = {
+            TopAppBar(
+                title = { Text("Your Cart") },
+                actions = {
+                    IconButton(onClick = { showEmailInput = !showEmailInput }) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = "Share Cart"
+                        )
+                    }
+                    IconButton(
                         onClick = {
-                            navController.navigate("checkout")
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                            viewModel.deleteCart()
+                            navController.navigate("products")
+                        }
                     ) {
-                        Text("Checkout")
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Cart"
+                        )
                     }
                 }
             )
-        }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-                .padding(bottom = paddingValues.calculateBottomPadding()) // Ensure bottom padding for the bottom bar
-        ) {
-            Text("Your Cart", style = MaterialTheme.typography.titleLarge)
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (cartProducts.isEmpty()) {
-                Text("Your cart is empty!", style = MaterialTheme.typography.bodyMedium)
-            } else {
-                LazyColumn {
-                    items(cartProducts) { product ->
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(8.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(product.productName)
-                            Text("$${product.productPrice} x${product.quantity}")
-                        }
+        },
+        bottomBar = {
+            BottomAppBar {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Total: ${"%.2f".format(totalPrice)}€",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    Button(
+                        onClick = {
+                            viewModel.deleteCart()
+                            navController.navigate("products")
+                        },
+                        modifier = Modifier.padding(start = 16.dp)
+                    ) {
+                        Text(text = "Confirm Payment")
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+        }
 
-            // Share button
-            Button(
-                onClick = { showEmailInput = true },
-                modifier = Modifier.fillMaxWidth()
+    ) { paddingValues ->
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = paddingValues.calculateTopPadding())
             ) {
-                Text("Share Cart")
-            }
-
-            // Email input and send button visibility
-            if (showEmailInput) {
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp)
-                ) {
-                    TextField(
-                        value = email,
-                        onValueChange = { email = it },
-                        label = { Text("Enter email") },
-                        isError = emailError.isNotEmpty(),
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                if (showEmailInput) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 16.dp)
+                    ) {
+                        TextField(
+                            value = email,
+                            onValueChange = { email = it },
+                            label = { Text("Enter email") },
+                            isError = emailError.isNotEmpty(),
+                            modifier = Modifier.weight(1f)
+                        )
+                        IconButton(
+                            onClick = {
+                                if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                                    emailError = "Invalid email."
+                                } else {
+                                    emailError = ""
+                                    viewModel.shareCartWithEmail(email)
+                                    showEmailInput = false
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.Send,
+                                contentDescription = "Send Cart"
+                            )
+                        }
+                    }
                     if (emailError.isNotEmpty()) {
                         Text(
                             text = emailError,
                             color = MaterialTheme.colorScheme.error,
-                            style = MaterialTheme.typography.bodySmall
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 8.dp)
                         )
                     }
+                }
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    Button(
-                        onClick = {
-                            // Validate email
-                            if (email.isEmpty() || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                                emailError = "Please enter a valid email."
-                            } else {
-                                emailError = ""
-                                // Call the function to share the cart
-                                viewModel.shareCartWithEmail(email)
-                                showEmailInput = false // Hide the email input after sharing
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
+                if (cartProducts.isEmpty()) {
+                    Text("Your cart is empty!", style = MaterialTheme.typography.bodyMedium)
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = paddingValues.calculateTopPadding())
                     ) {
-                        Text("Send Cart")
+                        items(cartProducts) { product ->
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(8.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(product.productName, style = MaterialTheme.typography.bodyLarge)
+                                    Text(
+                                        "${product.productPrice}€ x ${product.quantity}",
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(8.dp))
+
+                                IconButton(
+                                    onClick = {
+                                        viewModel.removeProduct(product.productId)
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Remove Product"
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
-    // Trigger cart fetching
     LaunchedEffect(Unit) {
         viewModel.fetchCart()
     }
 }
-
-

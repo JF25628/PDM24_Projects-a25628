@@ -13,8 +13,20 @@ class ProductRepositoryImpl(private val firestore: FirebaseFirestore) : ProductR
             ProductModel(
                 name = doc.getString("name") ?: "",
                 price = doc.getDouble("price") ?: 0.0,
-                description = doc.getString("description") ?: "" // Retrieve the description
+                description = doc.getString("description") ?: ""
             )
         }
     }
+
+    override suspend fun getCartItems(userId: String): Int {
+        val result = firestore.collection("carts")
+            .whereEqualTo("userId", userId)
+            .get()
+            .await()
+
+        val CartModel = result.documents.firstOrNull()?.toObject(CartModel::class.java)
+
+        return CartModel?.products?.sumOf { it.quantity } ?: 0
+    }
+
 }

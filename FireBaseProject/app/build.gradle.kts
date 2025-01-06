@@ -1,8 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services") // Firebase plugin
-    kotlin("kapt") // For Room annotation processors
+    id("com.google.gms.google-services")
+    kotlin("kapt")
 }
 
 android {
@@ -57,7 +57,6 @@ android {
 }
 
 dependencies {
-    // Core Android and Jetpack Compose
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -67,32 +66,25 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
 
-    // Room Database
     implementation("androidx.room:room-runtime:2.5.2")
     implementation("androidx.room:room-ktx:2.5.2")
     implementation(libs.androidx.espresso.core)
-    kapt("androidx.room:room-compiler:2.5.2") // Room annotation processor
+    kapt("androidx.room:room-compiler:2.5.2")
 
-    // Firebase
     implementation(platform("com.google.firebase:firebase-bom:33.6.0"))
     implementation("com.google.firebase:firebase-analytics")
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
 
-    // Navigation Component
     implementation("androidx.navigation:navigation-compose:2.7.3")
 
-    // Lifecycle & LiveData
     implementation(libs.androidx.runtime.livedata)
 
-    // Coil for image loading
     implementation("io.coil-kt:coil-compose:2.0.0")
 
-    // Hilt Dependency Injection
     implementation ("com.google.dagger:hilt-android:2.51.1")
     kapt ("com.google.dagger:hilt-compiler:2.51.1")
 
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

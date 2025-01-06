@@ -7,26 +7,23 @@ import com.example.firebaseproject.app.domain.model.UserModel
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 
 class AuthRepositoryImpl(private val auth: FirebaseAuth) : AuthApi {
     override fun loginWithEmailAndPassword(email: String, password: String): Task<AuthResult> {
         return auth.signInWithEmailAndPassword(email, password)
     }
+
     override fun createUserWithEmailAndPassword(email: String, password: String): Task<AuthResult> {
         return auth.createUserWithEmailAndPassword(email, password).apply {
             addOnSuccessListener { authResult ->
                 val user = authResult.user
                 user?.let {
-                    // Create a UserModel with the user's email
                     val userModel = UserModel(
                         email = it.email ?: "",
                     )
 
-                    // Get a reference to Firestore
                     val userRef = firestore.collection("users").document(it.uid)
 
-                    // Write user data to Firestore
                     val userData = hashMapOf(
                         "email" to userModel.email,
                     )

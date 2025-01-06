@@ -15,7 +15,6 @@ import kotlinx.coroutines.tasks.await
 class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartRepository {
 
     override suspend fun getTotalProducts(userId: String, cartId: String): Int {
-        // Retrieve the cart document using userId
         val cartDoc = firestore.document(userId).get().await()
         return if (cartDoc.exists()) {
             val cart = cartDoc.toObject(CartModel::class.java)
@@ -25,13 +24,70 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
         }
     }
 
-    override suspend fun shareCartProducts(emailOtherUser: String, cartModel: CartModel): Result<Unit> {
-        // Share a cart with another user by adding the products to their cart
+    override suspend fun shareCartWithEmail(currentUserId: String, email: String): Result<Unit> {
         return try {
-            val otherUserCartRef = firestore.document(emailOtherUser)
-            otherUserCartRef.set(cartModel).await()
+            // Find recipient user by email
+            val recipientQuery = firestore.collection("users")
+                .whereEqualTo("email", email)
+                .get()
+                .await()
+
+            if (recipientQuery.isEmpty) {
+                Log.e("CartRepository", "User with email $email not found")
+                return Result.failure(Exception("User with email $email not found"))
+            }
+
+            val recipientUserId = recipientQuery.documents.first().id
+
+            // Fetch current user's cart
+            val currentCartSnapshot = firestore.collection("carts")
+                .document(currentUserId)
+                .get()
+                .await()
+
+            if (!currentCartSnapshot.exists()) {
+                Log.e("CartRepository", "Cart for user $currentUserId not found")
+                return Result.failure(Exception("Cart for current user not found"))
+            }
+
+            val currentCart = currentCartSnapshot.toObject(CartDTO::class.java)
+                ?: return Result.failure(Exception("Failed to parse current user's cart"))
+
+            // Fetch recipient's cart
+            val recipientCartSnapshot = firestore.collection("carts")
+                .document(recipientUserId)
+                .get()
+                .await()
+
+            if (recipientCartSnapshot.exists()) {
+                // Merge carts if recipient already has one
+                val recipientCart = recipientCartSnapshot.toObject(CartDTO::class.java)
+                val updatedItems = currentCart.items.map { currentItem ->
+                    val matchingItem = recipientCart?.items?.find { it.productId == currentItem.productId }
+                    if (matchingItem != null) {
+                        matchingItem.copy(quantity = matchingItem.quantity + currentItem.quantity)
+                    } else {
+                        CartItemModel(
+                            productId = currentItem.productId,
+                            quantity = currentItem.quantity
+                        )
+                    }
+                }
+
+                firestore.collection("carts").document(recipientUserId)
+                    .update("items", updatedItems)
+                    .await()
+            } else {
+                // Create a new cart for the recipient
+                val newCart = CartDTO(userId = recipientUserId, items = currentCart.items)
+                firestore.collection("carts").document(recipientUserId)
+                    .set(newCart)
+                    .await()
+            }
+            Log.d("CartRepository", "Cart shared successfully with $email")
             Result.success(Unit)
         } catch (e: Exception) {
+            Log.e("CartRepository", "Error sharing cart: ", e)
             Result.failure(e)
         }
     }
@@ -40,19 +96,12 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
         val cartRef = firestore.collection("carts").document(userId)
 
         return try {
-            // Log the incoming parameters to verify
-            Log.d("CartRepository", "addProductToCart called with userId: $userId")
-
-            // Fetch the cart document
             val cartSnapshot = cartRef.get().await()
-            Log.d("CartRepository", "Cart document fetched, exists: ${cartSnapshot.exists()}")
 
             if (cartSnapshot.exists()) {
-                // Retrieve existing cart
                 val currentCart = cartSnapshot.toObject(CartModel::class.java)
                 val updatedProducts = currentCart?.products?.toMutableList() ?: mutableListOf()
 
-                // Get the product document ID (Firestore automatically generates this ID)
                 val productCollection = firestore.collection("products")
                 val productSnapshot = productCollection.whereEqualTo("name", product.name).get().await()
 
@@ -61,31 +110,20 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
                     return Result.failure(Exception("Product not found"))
                 }
 
-                // Assuming the product collection has only one matching document
                 val productDocId = productSnapshot.documents[0].id
-                Log.d("CartRepository", "Product document ID: $productDocId")
 
-                // Check if the product already exists in the cart
                 val existingProduct = updatedProducts.find { it.productId == productDocId }
-                Log.d("CartRepository", "Existing product found: ${existingProduct != null}")
 
                 if (existingProduct != null) {
-                    // Update the quantity of the existing product
                     val updatedProduct = existingProduct.copy(quantity = existingProduct.quantity + 1)
                     val index = updatedProducts.indexOf(existingProduct)
                     updatedProducts[index] = updatedProduct
-                    Log.d("CartRepository", "Product updated with new quantity: ${updatedProduct.quantity}")
                 } else {
-                    // Add the new product to the cart
                     updatedProducts.add(CartItemModel(productDocId, 1))
-                    Log.d("CartRepository", "New product added: $productDocId")
                 }
 
-                // Update the cart document with the updated products
                 cartRef.update("products", updatedProducts).await()
-                Log.d("CartRepository", "Cart updated successfully.")
             } else {
-                // Create a new cart document if it doesn't exist, use the productDocId for the new cart item
                 val productCollection = firestore.collection("products")
                 val productSnapshot = productCollection.whereEqualTo("name", product.name).get().await()
 
@@ -97,7 +135,6 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
                 val productDocId = productSnapshot.documents[0].id
                 val newCart = CartModel(userId, listOf(CartItemModel(productDocId, 1)))
                 cartRef.set(newCart).await()
-                Log.d("CartRepository", "New cart created and product added.")
             }
 
             Result.success(Unit)
@@ -108,35 +145,37 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
     }
 
     override suspend fun removeProductFromCart(productId: String, userId: String): Result<Unit> {
-        // Reference to the user's cart
         val cartRef = firestore.collection("carts").document(userId)
         val cartDoc = cartRef.get().await()
 
         return try {
             if (cartDoc.exists()) {
                 val currentCart = cartDoc.toObject(CartModel::class.java)
-                val updatedProducts = currentCart?.products?.filter { it.productId != productId } ?: emptyList()
+                val updatedProducts = currentCart?.products?.map { product ->
+                    if (product.productId == productId && product.quantity > 1) {
+                        product.copy(quantity = product.quantity - 1)
+                    } else if (product.productId == productId && product.quantity == 1) {
+                        null
+                    } else {
+                        product
+                    }
+                }?.filterNotNull() ?: emptyList()
 
-                // Update the cart with the filtered list of products (excluding the removed product)
                 cartRef.update("products", updatedProducts).await()
-                Log.d("CartRepository", "Product removed successfully: $productId")
             } else {
                 Log.e("CartRepository", "Cart document does not exist for user: $userId")
             }
             Result.success(Unit)
         } catch (e: Exception) {
-            Log.e("CartRepository", "Error removing product from cart: ${e.message}", e)
+            Log.e("CartRepository", "Error decrementing product quantity: ${e.message}", e)
             Result.failure(e)
         }
     }
 
-
     override suspend fun deleteCart(userId: String): Result<Unit> {
-        // Reference to the Firestore collection that stores the carts
         val cartRef = firestore.collection("carts").document(userId)
 
         return try {
-            // Attempt to delete the document for the given user ID
             cartRef.delete().await()
             Result.success(Unit)
         } catch (e: Exception) {
@@ -149,32 +188,23 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
         val productsRef = firestore.collection("products")
 
         return try {
-            // Log the start of the function and the userId being used
-            Log.d("CartRepository", "getCart called with userId: $userId")
 
-            // Fetch the cart document
             val cartDoc = cartRef.get().await()
-            Log.d("CartRepository", "Cart document fetched, exists: ${cartDoc.exists()}")
 
             if (!cartDoc.exists()) {
                 Log.d("CartRepository", "No cart found for user: $userId")
                 return null
             }
 
-            // Convert cart document to CartModel
             val cartModel = cartDoc.toObject(CartModel::class.java) ?: return null
-            Log.d("CartRepository", "Cart document converted to CartModel, userId: ${cartModel.userId}")
 
-            // Fetch detailed product info using product document IDs
             val cartItems = cartModel.products.mapNotNull { cartItem ->
                 Log.d("CartRepository", "Fetching product details for productId: ${cartItem.productId}")
-                val productDoc = productsRef.document(cartItem.productId).get().await() // Fetch product by document ID
+                val productDoc = productsRef.document(cartItem.productId).get().await()
 
                 if (productDoc.exists()) {
                     val productData = productDoc.toObject(ProductModel::class.java)
                     if (productData != null) {
-                        Log.d("CartRepository", "Product found: ${productData.name}, price: ${productData.price}")
-                        // Map cart item to CartItemDTO using the product document ID
                         CartItemDTO(
                             productId = cartItem.productId,
                             productName = productData.name,
@@ -191,13 +221,10 @@ class CartRepositoryImpl(private val firestore: FirebaseFirestore) : CartReposit
                 }
             }
 
-            // Log the result before returning the DTO
-            Log.d("CartRepository", "Returning CartDTO with ${cartItems.size} items.")
-            // Return the DTO with all data combined
             CartDTO(userId = cartModel.userId, items = cartItems)
         } catch (e: Exception) {
             Log.e("CartRepository", "Error while getting cart for user: $userId, error: ${e.message}", e)
-            null // Return null if any exception occurs
+            null
         }
     }
 

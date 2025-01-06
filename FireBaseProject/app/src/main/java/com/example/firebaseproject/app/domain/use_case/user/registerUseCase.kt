@@ -1,7 +1,6 @@
 package com.example.firebaseproject.app.domain.use_case.user
 
 import com.example.firebaseproject.app.data.remote.api.AuthApi
-import com.example.firebaseproject.app.domain.model.UserModel
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.AuthResult
 

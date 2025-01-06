@@ -5,11 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.firebaseproject.app.data.remote.api.AuthApi
 import com.example.firebaseproject.app.data.remote.api.FirebaseInstance.auth
-import com.example.firebaseproject.app.data.remote.model.AddUserDto
 import com.example.firebaseproject.app.data.repository.AuthRepositoryImpl
 import com.example.firebaseproject.app.domain.model.UserModel
-import com.example.firebaseproject.app.domain.use_case.user.loginUseCase
-import com.example.firebaseproject.app.domain.use_case.user.registerUseCase
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -18,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
+
 class UserViewModel : ViewModel() {
     private val dbAuth = Firebase.auth
     private val authApi: AuthApi = AuthRepositoryImpl(dbAuth)
@@ -34,11 +32,9 @@ class UserViewModel : ViewModel() {
         data class Error(val message: String) : LoginState()
     }
 
-    // User state
     private val _currentUser = MutableStateFlow<FirebaseUser?>(auth.currentUser)
     val currentUser: StateFlow<FirebaseUser?> get() = _currentUser
 
-    // Login state
     private val _loginState = MutableStateFlow<LoginState>(LoginState.Idle)
     val loginState: StateFlow<LoginState> get() = _loginState
 
@@ -48,13 +44,11 @@ class UserViewModel : ViewModel() {
     }
 
     init {
-        // Add the AuthStateListener to FirebaseAuth
         auth.addAuthStateListener(authStateListener)
     }
 
     override fun onCleared() {
         super.onCleared()
-        // Remove the listener when the ViewModel is cleared
         auth.removeAuthStateListener(authStateListener)
     }
 
@@ -86,18 +80,16 @@ class UserViewModel : ViewModel() {
     fun register(user: UserModel, onSuccess: () -> Unit, onError: (Exception) -> Unit) {
         viewModelScope.launch {
             try {
-                // Create the user in Firebase Auth
                 val authResult = authApi.createUserWithEmailAndPassword(user.email, user.password).await()
                 val firebaseUser = authResult.user
 
                 if (firebaseUser != null) {
-                    //user.id = firebaseUser.uid
                     user.ToAddUserDto()
-                    dbAuth.signOut() // Sign out the user
-                    onSuccess() // Notify success
+                    dbAuth.signOut()
+                    onSuccess()
                 }
             } catch (e: Exception) {
-                onError(e) // Handle error
+                onError(e)
             }
         }
     }
@@ -106,8 +98,7 @@ class UserViewModel : ViewModel() {
         try {
             Log.d("UserViewModel", "Logging out user")
             dbAuth.signOut()
-
-            _currentUser.value = null // Clear current user to update UI
+            _currentUser.value = null
             Log.d("UserViewModel", "User logged out successfully")
         } catch (e: Exception) {
             Log.e("UserViewModel", "Logout failed", e)

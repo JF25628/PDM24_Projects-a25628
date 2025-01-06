@@ -1,10 +1,9 @@
 package com.example.firebaseproject.app.presentation.screen
 
-import android.util.Log
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -16,15 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.firebaseproject.app.domain.model.ProductModel
-import com.example.firebaseproject.app.presentation.component.LogOutButton
 import com.example.firebaseproject.app.presentation.viewModel.ProductViewModel
 import com.example.firebaseproject.app.presentation.viewModel.UserViewModel
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material.ripple.rememberRipple
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,23 +36,28 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.sp
 import com.google.firebase.Firebase
 import com.google.firebase.auth.auth
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.text.style.TextOverflow
 
-@OptIn(ExperimentalMaterial3Api::class)@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun ProductListScreen(
     navController: NavController,
     viewModel: ProductViewModel = androidx.lifecycle.viewmodel.compose.viewModel(),
     userViewModel: UserViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
 ) {
-    val products by viewModel.products.collectAsState()
     val userId = Firebase.auth.currentUser?.uid ?: ""
+    val totalQuantity by viewModel.totalQuantity.collectAsState()
+    val products by viewModel.products.collectAsState()
 
-    // If no user is logged in, navigate to the login screen
-    if (userId.isEmpty()) {
-        LaunchedEffect(Unit) {
-            navController.navigate("login") { popUpTo("login") { inclusive = true } }
+    LaunchedEffect(userId) {
+        if (userId.isNotEmpty()) {
+            viewModel.fetchTotalCartQuantity(userId)
         }
     }
 
@@ -62,11 +66,19 @@ fun ProductListScreen(
             TopAppBar(
                 title = { Text("Products") },
                 actions = {
-                    IconButton(onClick = { navController.navigate("cart") }) {
-                        Icon(
-                            imageVector = Icons.Default.ShoppingCart,
-                            contentDescription = "Go to Cart"
-                        )
+                    BadgedBox(
+                        badge = {
+                            if (totalQuantity > 0) {
+                                Badge { Text(totalQuantity.toString()) }
+                            }
+                        }
+                    ) {
+                        IconButton(onClick = { navController.navigate("cart") }) {
+                            Icon(
+                                imageVector = Icons.Default.ShoppingCart,
+                                contentDescription = "Go to Cart"
+                            )
+                        }
                     }
                 }
             )
@@ -76,8 +88,8 @@ fun ProductListScreen(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 IconButton(onClick = {
-                    userViewModel.logout() // Log out the user
-                    navController.navigate("login") // Navigate to the login screen after logout
+                    userViewModel.logout()
+                    navController.navigate("login")
                 }) {
                     Icon(Icons.Default.ExitToApp, contentDescription = "Log Out")
                 }
@@ -100,46 +112,51 @@ fun ProductListScreen(
     )
 }
 
-
-
 @Composable
 fun ProductCard(
     product: ProductModel,
     viewModel: ProductViewModel,
-    userId: String // Pass user ID for adding to cart
+    userId: String,
+    modifier: Modifier = Modifier
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .padding(8.dp)
-            .fillMaxWidth()
-            .height(200.dp)
-            .clickable { viewModel.addProductToCart(product, userId) }
+            .aspectRatio(1f)
+            .clickable(
+                onClick = { viewModel.addProductToCart(product, userId) },
+                indication = rememberRipple(),
+                interactionSource = remember { MutableInteractionSource() }
+            )
+            .shadow(4.dp),
+        shape = RoundedCornerShape(8.dp),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .padding(8.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
                 text = product.name,
                 style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(bottom = 8.dp)
+                modifier = Modifier.padding(bottom = 4.dp),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
             Text(
                 text = product.description,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(bottom = 8.dp),
-                color = Color.Gray
+                color = Color.Gray,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(vertical = 4.dp)
             )
             Text(
-                text = "$${product.price}",
-                style = MaterialTheme.typography.bodyLarge
+                text = "${product.price}€",
+                style = MaterialTheme.typography.bodyLarge,
+                modifier = Modifier.align(Alignment.End)
             )
         }
     }
 }
-
-
-

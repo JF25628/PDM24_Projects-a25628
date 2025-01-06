@@ -4,8 +4,6 @@ import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -13,6 +11,7 @@ import androidx.navigation.NavController
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import com.example.firebaseproject.app.presentation.viewModel.UserViewModel
+
 @Composable
 fun LoginScreen(
     navController: NavController,
@@ -22,22 +21,17 @@ fun LoginScreen(
     val password by viewModel.password.collectAsState()
     val loginState by viewModel.loginState.collectAsState()
 
-    // Observe login state to handle navigation or show error messages
     LaunchedEffect(loginState) {
         when (loginState) {
             is UserViewModel.LoginState.Success -> {
-                // Navigate to the products screen upon successful login
                 navController.navigate("products") {
                     popUpTo("login") { inclusive = true }
                 }
             }
             is UserViewModel.LoginState.Error -> {
-                // Handle login failure (e.g., show a message)
-                // You can use Snackbar or Text to show the error message
                 Log.e("Login", (loginState as UserViewModel.LoginState.Error).message)
             }
             else -> {
-                // Handle other states if needed
             }
         }
     }
